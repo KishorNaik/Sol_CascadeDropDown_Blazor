@@ -1,0 +1,99 @@
+﻿@page "/cascadedemo"
+@inject Sol_Demo.Data.CountryCityServices countryCityService
+
+<h3>CascadeDropDownComponent</h3>
+
+@if (ListCountry == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="row">
+        <div class="col-md-4">
+            <label for="Country" class="control-label">Country</label>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="Cities" class="control-label">Cities</label>
+        </div>
+    </div>
+    <div class="row" style="padding-top:10px">
+        <div class="col-md-4">
+            <select class="form-control" @onchange="@CountryClicked">
+                <option value="">-- Select Country --</option>
+                @foreach (var country in ListCountry)
+                {
+                    <option value="@country.CountryId">@country.CountryName</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-4">
+            <select class="form-control" @onchange="@CityClicked">
+                <option value="">-- Select City --</option>
+                @if (ListCity != null)
+                {
+                    @foreach (var city in ListCity)
+                    {
+                        <option value="@city.CityName">@city.CityName</option>
+                    }
+                }
+            </select>
+        </div>
+    </div>
+    <div class="row" style="padding-top:50px">
+        <div class="col-md-4">
+            <label class="control-label">Country Name: @CountryName</label>
+        </div>
+        <div class="col-md-4">
+            <label class="control-label">City Name: @CityName</label>
+        </div>
+    </div>
+
+}
+
+@code {
+
+    public List<CountryModel> ListCountry { get; set; }
+
+    public List<CityModel> ListCity { get; set; }
+
+    private String CityName { get; set; }
+    private String CountryId { get; set; }
+    private String CountryName { get; set; }
+
+    protected async override Task OnInitializedAsync()
+    {
+        ListCountry = (await countryCityService?.GetCountryDataAsync()).ToList();
+    }
+
+    protected async Task CountryClicked(ChangeEventArgs countryEvent)
+    {
+        ListCity?.Clear();
+
+        CityName = String.Empty;
+        CountryId = countryEvent.Value.ToString();
+
+        CountryName =
+                ListCountry
+                .FirstOrDefault((leCountryModel) => leCountryModel.CountryId == Convert.ToInt32(CountryId))
+                .CountryName;
+
+        ListCity =
+                (await
+                countryCityService
+                ?.GetCityDataAsync()
+                )
+                ?.Where((leCityModel) => leCityModel.CountryId == Convert.ToInt32(CountryId))
+                ?.ToList();
+
+        this.StateHasChanged();
+
+    }
+
+    protected void CityClicked(ChangeEventArgs cityEvent)
+    {
+        CityName = cityEvent.Value.ToString();
+        this.StateHasChanged();
+    }
+
+}
